@@ -1,140 +1,150 @@
-# integracaoSQL
+# IntegracaoSQL
 
-Aplicativo mobile em React Native (Expo) para cadastro e visualizacao de produtos e categorias.
+![Expo](https://img.shields.io/badge/Expo-54-000020?logo=expo&logoColor=white)
+![React Native](https://img.shields.io/badge/React%20Native-0.81-61DAFB?logo=react&logoColor=black)
+![React](https://img.shields.io/badge/React-19-149ECA?logo=react&logoColor=white)
+![TypeScript](https://img.shields.io/badge/TypeScript-5.9-3178C6?logo=typescript&logoColor=white)
+![Navigation](https://img.shields.io/badge/React%20Navigation-Native%20Stack-6B46C1)
+![Status](https://img.shields.io/badge/Status-Ready-16A34A)
 
-O projeto atualmente esta com dados em memoria (mock/local state) e preparado para evolucao com persistencia em SQLite.
+Aplicativo mobile desenvolvido com Expo e React Native para gerenciamento de produtos e categorias, com navegacao tipada, interface minimalista padronizada e fluxo de cadastro/listagem organizado por modulos.
 
-## Objetivo
+## Visao Geral
 
-Este app foi desenvolvido como base para uma atividade de integracao com banco local, com foco em:
+O projeto oferece uma estrutura clara para operacoes de catalogo com foco em usabilidade:
 
-- Navegacao entre telas com React Navigation
-- Fluxo de cadastro e listagem
-- Estrutura simples para evoluir para CRUD com SQLite
-- Interface com estilo minimalista e padronizado
+- Home com acesso direto aos modulos principais
+- Gestao de produtos com busca e controle de quantidade
+- Gestao de categorias com acoes de edicao e exclusao na listagem
+- Formularios dedicados para cadastro de produto e categoria
+- Dropdown para selecao de categoria no cadastro de produto
 
-## Tecnologias
+## Stack Tecnologica
 
 - Expo 54
 - React 19
 - React Native 0.81
-- TypeScript
-- React Navigation (Native Stack)
+- TypeScript (modo strict)
+- React Navigation Native Stack
 - react-native-element-dropdown
 
-## Estrutura atual
+## Arquitetura de Navegacao
 
-- App.tsx: configuracao do Stack Navigator e tipagem das rotas
-- index.ts: ponto de entrada do app
-- src/screens/home/index.tsx: tela inicial com atalhos para Produtos e Categorias
-- src/screens/produtos/index.tsx: listagem de produtos, busca por nome, controle de quantidade e botao para novo produto
-- src/screens/categorias/index.tsx: listagem de categorias com botoes de editar/excluir
-- src/screens/criarProduto/index.tsx: formulario para cadastrar produto com dropdown de categoria
-- src/screens/criarCategoria/index.tsx: formulario para cadastrar categoria
+```mermaid
+flowchart TD
+  A[Home] --> B[Produtos]
+  A --> C[Categorias]
+  B --> D[CriarProduto]
+  C --> E[CriarCategoria]
+```
 
-## Rotas cadastradas
+## Fluxo Funcional
 
-No Stack principal:
+```mermaid
+sequenceDiagram
+  participant U as Usuario
+  participant H as Home
+  participant P as Produtos
+  participant F as CriarProduto
 
-- Home
-- Produtos
-- Categorias
-- CriarCategoria
-- CriarProduto
+  U->>H: Acessa o app
+  U->>H: Toca em Produtos
+  H->>P: Navega para listagem
+  U->>P: Pesquisa e ajusta quantidade
+  U->>P: Toca em Novo+
+  P->>F: Navega para formulario
+  U->>F: Preenche campos e categoria
+  U->>F: Salvar
+```
 
-## Funcionalidades implementadas hoje
+## Estrutura do Projeto
 
-- Navegacao entre todas as telas principais
-- Tela Home com acesso rapido a modulos
-- Tela Produtos:
-  - Busca por nome
-  - Lista de produtos mockados
-  - Ajuste de quantidade por item
-  - Acao visual de adicionar
-- Tela Categorias:
-  - Lista de categorias mockadas
-  - Acoes visuais de editar e excluir
-- Formularios:
-  - Criar categoria
-  - Criar produto com selecao de categoria via dropdown
+```text
+integracaoSQL/
+|-- App.tsx
+|-- index.ts
+|-- app.json
+|-- package.json
+|-- tsconfig.json
+|-- assets/
+|   |-- adaptive-icon.png
+|   |-- favicon.png
+|   |-- icon.png
+|   |-- splash-icon.png
+|-- src/
+|   |-- screens/
+|       |-- home/
+|       |   |-- index.tsx
+|       |-- produtos/
+|       |   |-- index.tsx
+|       |-- categorias/
+|       |   |-- index.tsx
+|       |-- criarProduto/
+|       |   |-- index.tsx
+|       |-- criarCategoria/
+|           |-- index.tsx
+```
 
-## Estado atual da persistencia
+## Modulos de Tela
 
-Atualmente nao ha banco de dados integrado.
+| Tela | Papel no sistema |
+|---|---|
+| Home | Centraliza a navegacao entre Produtos e Categorias |
+| Produtos | Lista produtos, filtra por nome e controla quantidade por item |
+| Categorias | Lista categorias e exibe acoes de editar/excluir |
+| CriarProduto | Formulario para nome, valor e categoria |
+| CriarCategoria | Formulario para criacao de categoria |
 
-- Produtos e categorias sao arrays locais nas telas
-- Nao existe salvamento persistente entre execucoes
-- Botoes de salvar/editar/excluir ainda nao gravam dados em banco
+## Padrao Visual
 
-## Proxima etapa: integracao com SQLite
+O app adota uma linha minimalista e consistente:
 
-Como voce comentou, o proximo passo e conectar SQLite para registrar produtos e categorias.
+- Fundo claro neutro
+- Cartoes com borda suave
+- Botoes principais escuros com alto contraste
+- Tipografia com hierarquia simples
+- Campos de formulario alinhados e uniformes
 
-### Sugestao de modelagem inicial
-
-Tabela categorias
-
-- id INTEGER PRIMARY KEY AUTOINCREMENT
-- nome TEXT NOT NULL UNIQUE
-
-Tabela produtos
-
-- id INTEGER PRIMARY KEY AUTOINCREMENT
-- nome TEXT NOT NULL
-- valor_a_vista REAL NOT NULL
-- categoria_id INTEGER
-- FOREIGN KEY (categoria_id) REFERENCES categorias(id)
-
-### Fluxo sugerido de implementacao
-
-1. Adicionar dependencia SQLite no Expo (preferencialmente expo-sqlite).
-2. Criar camada de banco em src/database (conexao, criacao de tabelas, migrations simples).
-3. Criar funcoes de repositorio/servico:
-   - categorias: create, list, update, delete
-   - produtos: create, list, update, delete
-4. Substituir arrays mock por leitura real do banco.
-5. Conectar formularios de cadastro com INSERT no banco.
-6. Atualizar listagens apos insercao/edicao/exclusao.
-7. Adicionar validacoes basicas de formulario (campo obrigatorio, valor numerico, etc.).
-
-## Como executar
+## Configuracao e Execucao
 
 ### Requisitos
 
 - Node.js LTS
 - npm
-- Expo Go (Android/iOS) ou emulador configurado
+- Expo Go no celular ou emulador Android/iOS
 
-### Instalar dependencias
+### Instalacao
 
+```bash
 npm install
+```
 
-### Rodar o projeto
+### Execucao
 
+```bash
 npm run start
+```
 
-Opcional:
+Comandos adicionais:
 
-- npm run android
-- npm run ios
-- npm run web
+```bash
+npm run android
+npm run ios
+npm run web
+```
 
-## Scripts disponiveis
+## Scripts
 
-- start: expo start
-- android: expo start --android
-- ios: expo start --ios
-- web: expo start --web
+| Script | Comando |
+|---|---|
+| start | expo start |
+| android | expo start --android |
+| ios | expo start --ios |
+| web | expo start --web |
 
-## Melhorias recomendadas apos SQLite
+## Qualidade Tecnica
 
-- Separar tipos em pasta dedicada (ex.: src/types)
-- Criar componentes reutilizaveis de UI (botao, input, card)
-- Centralizar tema de cores/espacamento
-- Adicionar tratamento de erros de banco
-- Adicionar testes para regras de validacao e repositorios
-
-## Observacoes
-
-- O design das telas ja esta padronizado em uma linha visual minimalista.
-- O projeto esta bem posicionado para evoluir de prototipo para CRUD local com SQLite.
+- Tipagem de rotas com RootStackParamList
+- TypeScript em strict mode
+- Separacao por modulos de tela
+- Organizacao de estilos por componente
