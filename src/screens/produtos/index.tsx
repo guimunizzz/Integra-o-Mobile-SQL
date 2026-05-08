@@ -1,10 +1,6 @@
 import { useState } from "react";
-import { StyleSheet, Text, TouchableOpacity, FlatList, View, TextInput } from "react-native";
-import { NativeStackNavigationProp } from "@react-navigation/native-stack";
-import { RootStackParamList } from "../../../App";
-import { useNavigation } from "@react-navigation/native";
-
-type NavigationProps = NativeStackNavigationProp<RootStackParamList>;
+import { StyleSheet, Text, TouchableOpacity, FlatList, View, TextInput, Modal } from "react-native";
+import { Dropdown } from 'react-native-element-dropdown';
 
 export type Produto = {
     id: number,
@@ -16,6 +12,11 @@ type Quantidades = {
     [key: string]: number
 }
 
+const categorias = [
+    { label: 'Teclado', value: '1' },
+    { label: 'Mouse', value: '2' },
+];
+
 export default function Produtos() {
 
     const produtos: Produto[] = [
@@ -23,10 +24,12 @@ export default function Produtos() {
         { id: 2, nomeProduto: 'Mouse Superlight', valorAVista: 100 }
     ]
 
-    const navigation = useNavigation<NavigationProps>();
-
     const [quantidade, setQuantidades] = useState<Quantidades>({});
     const [busca, setBusca] = useState('')
+    const [modalVisible, setModalVisible] = useState(false);
+    const [nomeProduto, setNomeProduto] = useState('');
+    const [valor, setValor] = useState('');
+    const [categoria, setCategoria] = useState(null);
 
     const produtosFiltrados = produtos.filter(produto =>
         produto.nomeProduto.toLowerCase().startsWith(busca.toLowerCase())
@@ -46,7 +49,14 @@ export default function Produtos() {
         }))
     }
 
-
+    const handleSalvarProduto = () => {
+        if (nomeProduto.trim() && valor.trim() && categoria) {
+            setNomeProduto('');
+            setValor('');
+            setCategoria(null);
+            setModalVisible(false);
+        }
+    };
 
     return (
         <View style={styles.container}>
@@ -59,7 +69,7 @@ export default function Produtos() {
                 />
             </View>
             <View style={styles.headerAction}>
-                <TouchableOpacity onPress={() => navigation.navigate('CriarProduto')} style={styles.button}>
+                <TouchableOpacity onPress={() => setModalVisible(true)} style={styles.button}>
                     <Text style={styles.buttonText}>Novo +</Text>
                 </TouchableOpacity>
             </View>
@@ -106,6 +116,76 @@ export default function Produtos() {
                     </View>
                 )}
             />
+
+            <Modal
+                animationType="slide"
+                transparent={true}
+                visible={modalVisible}
+                onRequestClose={() => setModalVisible(false)}
+            >
+                <View style={styles.modalOverlay}>
+                    <View style={styles.modalContent}>
+                        <View style={styles.modalHeader}>
+                            <Text style={styles.modalTitle}>Novo Produto</Text>
+                            <TouchableOpacity onPress={() => setModalVisible(false)}>
+                                <Text style={styles.closeButton}>✕</Text>
+                            </TouchableOpacity>
+                        </View>
+
+                        <TextInput
+                            style={styles.field}
+                            placeholder="Inserir nome do produto"
+                            placeholderTextColor="#6b7280"
+                            onChangeText={setNomeProduto}
+                            value={nomeProduto}
+                        />
+                        <TextInput
+                            style={styles.field}
+                            placeholder="Inserir valor"
+                            placeholderTextColor="#6b7280"
+                            onChangeText={setValor}
+                            value={valor}
+                        />
+                        <Dropdown
+                            style={styles.field}
+                            placeholderStyle={styles.dropdownPlaceholder}
+                            selectedTextStyle={styles.dropdownSelectedText}
+                            inputSearchStyle={styles.dropdownSearchInput}
+                            data={categorias}
+                            search
+                            maxHeight={300}
+                            labelField="label"
+                            valueField="value"
+                            placeholder="Selecione uma categoria"
+                            searchPlaceholder="Buscar..."
+                            value={categoria}
+                            onChange={item => {
+                                setCategoria(item.value);
+                            }}
+                        />
+
+                        <View style={styles.buttonContainer}>
+                            <TouchableOpacity
+                                style={styles.buttonCancel}
+                                onPress={() => {
+                                    setNomeProduto('');
+                                    setValor('');
+                                    setCategoria(null);
+                                    setModalVisible(false);
+                                }}
+                            >
+                                <Text style={styles.textButtonCancel}>Cancelar</Text>
+                            </TouchableOpacity>
+                            <TouchableOpacity
+                                style={styles.buttonSave}
+                                onPress={handleSalvarProduto}
+                            >
+                                <Text style={styles.textButtonSave}>Salvar</Text>
+                            </TouchableOpacity>
+                        </View>
+                    </View>
+                </View>
+            </Modal>
         </View>
     );
 }
@@ -229,6 +309,89 @@ const styles = StyleSheet.create({
         alignItems: 'center'
     },
     textAddCarrinho: {
+        color: '#f9fafb',
+        fontWeight: '600'
+    },
+    modalOverlay: {
+        flex: 1,
+        backgroundColor: 'rgba(0, 0, 0, 0.5)',
+        justifyContent: 'flex-end'
+    },
+    modalContent: {
+        backgroundColor: '#f8fafc',
+        borderTopLeftRadius: 20,
+        borderTopRightRadius: 20,
+        paddingHorizontal: 16,
+        paddingVertical: 20,
+        maxHeight: '80%'
+    },
+    modalHeader: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        marginBottom: 20
+    },
+    modalTitle: {
+        fontSize: 20,
+        fontWeight: '700',
+        color: '#111827'
+    },
+    closeButton: {
+        fontSize: 24,
+        color: '#6b7280',
+        fontWeight: '600'
+    },
+    field: {
+        height: 52,
+        width: '100%',
+        marginBottom: 12,
+        borderWidth: 1,
+        borderColor: '#d1d5db',
+        borderRadius: 10,
+        paddingHorizontal: 12,
+        justifyContent: 'center',
+        backgroundColor: '#ffffff',
+        color: '#111827'
+    },
+    dropdownPlaceholder: {
+        fontSize: 15,
+        color: '#6b7280'
+    },
+    dropdownSelectedText: {
+        fontSize: 15,
+        color: '#111827'
+    },
+    dropdownSearchInput: {
+        height: 40,
+        fontSize: 15,
+        color: '#111827'
+    },
+    buttonContainer: {
+        flexDirection: 'row',
+        gap: 12,
+        marginTop: 20,
+        marginBottom: 10
+    },
+    buttonCancel: {
+        flex: 1,
+        borderWidth: 1,
+        borderColor: '#d1d5db',
+        paddingVertical: 10,
+        borderRadius: 8,
+        alignItems: 'center'
+    },
+    textButtonCancel: {
+        color: '#111827',
+        fontWeight: '600'
+    },
+    buttonSave: {
+        flex: 1,
+        backgroundColor: '#111827',
+        paddingVertical: 10,
+        borderRadius: 8,
+        alignItems: 'center'
+    },
+    textButtonSave: {
         color: '#f9fafb',
         fontWeight: '600'
     }

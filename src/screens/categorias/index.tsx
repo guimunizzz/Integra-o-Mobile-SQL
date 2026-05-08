@@ -1,10 +1,5 @@
 import { useState } from "react";
-import { StyleSheet, Text, TouchableOpacity, FlatList, View } from "react-native";
-import { NativeStackNavigationProp } from "@react-navigation/native-stack";
-import { RootStackParamList } from "../../../App";
-import { useNavigation } from "@react-navigation/native";
-
-type NavigationProps = NativeStackNavigationProp<RootStackParamList>;
+import { StyleSheet, Text, TouchableOpacity, FlatList, View, TextInput, Modal } from "react-native";
 
 export type Categorias = {
     id: number,
@@ -20,20 +15,25 @@ export default function Categorias() {
         { id: 3, nomeProduto: 'Monitor' },
     ]
 
-    const navigation = useNavigation<NavigationProps>();
-
     const [busca] = useState('')
+    const [modalVisible, setModalVisible] = useState(false);
+    const [novaCategoria, setNovaCategoria] = useState('');
 
     const categoriasFiltradas = categorias.filter(produto =>
         produto.nomeProduto.toLowerCase().startsWith(busca.toLowerCase())
     );
 
-
+    const handleSalvarCategoria = () => {
+        if (novaCategoria.trim()) {
+            setNovaCategoria('');
+            setModalVisible(false);
+        }
+    };
 
     return (
         <View style={styles.container}>
             <View style={styles.headerAction}>
-                <TouchableOpacity onPress={() => navigation.navigate('CriarCategoria')} style={styles.button}>
+                <TouchableOpacity onPress={() => setModalVisible(true)} style={styles.button}>
                     <Text style={styles.buttonText}>Novo +</Text>
                 </TouchableOpacity>
             </View>
@@ -58,6 +58,50 @@ export default function Categorias() {
                     </View>
                 )}
             />
+
+            <Modal
+                animationType="slide"
+                transparent={true}
+                visible={modalVisible}
+                onRequestClose={() => setModalVisible(false)}
+            >
+                <View style={styles.modalOverlay}>
+                    <View style={styles.modalContent}>
+                        <View style={styles.modalHeader}>
+                            <Text style={styles.modalTitle}>Nova Categoria</Text>
+                            <TouchableOpacity onPress={() => setModalVisible(false)}>
+                                <Text style={styles.closeButton}>✕</Text>
+                            </TouchableOpacity>
+                        </View>
+
+                        <TextInput
+                            style={styles.input}
+                            placeholder="Inserir Categoria"
+                            placeholderTextColor="#6b7280"
+                            onChangeText={setNovaCategoria}
+                            value={novaCategoria}
+                        />
+
+                        <View style={styles.buttonContainer}>
+                            <TouchableOpacity
+                                style={styles.buttonCancel}
+                                onPress={() => {
+                                    setNovaCategoria('');
+                                    setModalVisible(false);
+                                }}
+                            >
+                                <Text style={styles.textButtonCancel}>Cancelar</Text>
+                            </TouchableOpacity>
+                            <TouchableOpacity
+                                style={styles.buttonSave}
+                                onPress={handleSalvarCategoria}
+                            >
+                                <Text style={styles.textButtonSave}>Salvar</Text>
+                            </TouchableOpacity>
+                        </View>
+                    </View>
+                </View>
+            </Modal>
         </View>
     );
 }
@@ -142,6 +186,73 @@ const styles = StyleSheet.create({
     },
     textCategoria: {
         color: '#fff',
+        fontWeight: '600'
+    },
+    modalOverlay: {
+        flex: 1,
+        backgroundColor: 'rgba(0, 0, 0, 0.5)',
+        justifyContent: 'flex-end'
+    },
+    modalContent: {
+        backgroundColor: '#f8fafc',
+        borderTopLeftRadius: 20,
+        borderTopRightRadius: 20,
+        paddingHorizontal: 16,
+        paddingVertical: 20,
+        minHeight: 280
+    },
+    modalHeader: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        marginBottom: 20
+    },
+    modalTitle: {
+        fontSize: 20,
+        fontWeight: '700',
+        color: '#111827'
+    },
+    closeButton: {
+        fontSize: 24,
+        color: '#6b7280',
+        fontWeight: '600'
+    },
+    input: {
+        height: 52,
+        borderWidth: 1,
+        borderColor: '#d1d5db',
+        borderRadius: 10,
+        paddingHorizontal: 12,
+        backgroundColor: '#ffffff',
+        marginBottom: 16,
+        color: '#111827'
+    },
+    buttonContainer: {
+        flexDirection: 'row',
+        gap: 12,
+        marginTop: 20
+    },
+    buttonCancel: {
+        flex: 1,
+        borderWidth: 1,
+        borderColor: '#d1d5db',
+        paddingVertical: 10,
+        borderRadius: 8,
+        alignItems: 'center'
+    },
+    textButtonCancel: {
+        color: '#111827',
+        fontWeight: '600'
+    },
+    buttonSave: {
+        flex: 1,
+        backgroundColor: '#111827',
+        paddingVertical: 10,
+        borderRadius: 8,
+        alignItems: 'center'
+    },
+    textButtonSave: {
+        color: '#f9fafb',
         fontWeight: '600'
     }
 })
