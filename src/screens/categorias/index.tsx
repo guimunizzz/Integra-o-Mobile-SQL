@@ -1,125 +1,157 @@
-import { useState } from "react";
-import { StyleSheet, Text, TouchableOpacity, FlatList, View, TextInput, Modal } from "react-native";
+import React, { useEffect, useState } from 'react';
+import { View, Text, FlatList, TouchableOpacity, StyleSheet, Modal, TextInput } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { initDB } from '../../database/database';
+import { CategoriaRepository } from '../../repositories/CategoriaRepository';
+import { Categoria } from '../../models/CategoriaModel';
 
-export type Categorias = {
-    id: number,
-    nomeProduto: string
-}
+export default function CategoriaScreen() {
 
-
-export default function Categorias() {
-
-    const categorias: Categorias[] = [
-        { id: 1, nomeProduto: 'Teclado' },
-        { id: 2, nomeProduto: 'Mouse' },
-        { id: 3, nomeProduto: 'Monitor' },
-    ]
-
-    const [busca] = useState('')
+    const [categorias, setCategorias] = useState<Categoria[]>([]);
     const [modalVisible, setModalVisible] = useState(false);
-    const [novaCategoria, setNovaCategoria] = useState('');
+    const [nomeCategoria, setNomeCategoria] = useState('');
+    const [selectedCategoria, setSelectedCategoria] = useState<Categoria | null>(null);
 
-    const categoriasFiltradas = categorias.filter(produto =>
-        produto.nomeProduto.toLowerCase().startsWith(busca.toLowerCase())
-    );
+    const categoriaRepo = new CategoriaRepository();
 
-    const handleSalvarCategoria = () => {
-        if (novaCategoria.trim()) {
-            setNovaCategoria('');
-            setModalVisible(false);
+    useEffect(() => {
+        const setup = async () => {
+            await initDB();
+            loadData();
         }
-    };
+        setup();
+    }, [])
+
+    async function loadData(): Promise<void> {
+        const data = await categoriaRepo.findAll();
+        setCategorias(data);
+        setModalVisible(false);
+    }
+
+    async function salvar() {
+        if (!nomeCategoria.trim()) return;
+        if (selectedCategoria) {
+            categoriaRepo.update(new Categoria(nomeCategoria, selectedCategoria.Id));
+        } else {
+            categoriaRepo.create(new Categoria(nomeCategoria, 0));
+        }
+        closeModal();
+        loadData();
+    }
+
+    function openCreate(): void {
+        setSelectedCategoria(null);
+        setNomeCategoria('');
+        setModalVisible(true);
+    }
+    function openEdit(item:Categoria): void {
+        setSelectedCategoria(item);
+        setNomeCategoria(item.Nome);
+        setModalVisible(true);
+    }
+    function closeModal(): void {
+        setSelectedCategoria(null);
+        setNomeCategoria('');
+        setModalVisible(false);
+    }
 
     return (
-        <View style={styles.container}>
-            <View style={styles.headerAction}>
-                <TouchableOpacity onPress={() => setModalVisible(true)} style={styles.button}>
+        <SafeAreaView style={styles.container}>
+            <View style={styles.header}>
+                <Text style={styles.titleScreen}>Gestão de categorias</Text>
+                <TouchableOpacity style={styles.button} onPress={openCreate}>
                     <Text style={styles.buttonText}>Novo +</Text>
                 </TouchableOpacity>
             </View>
             <FlatList
-                data={categoriasFiltradas}
-                keyExtractor={(item) => item.id.toString()}
+                data={categorias}
+                keyExtractor={(item) => String(item.Id)}
                 contentContainerStyle={styles.listContent}
                 renderItem={({ item }) => (
                     <View style={styles.card}>
-                        <View style={styles.cardContent}>
-                            <Text style={styles.nomeProduto}>{item.nomeProduto}</Text>
+                        <Text style={styles.nomeProduto}>{item.Nome}</Text>
+                        <View style={styles.infoContainer}>
+                            <Text style={styles.label}>ID:</Text>
+                            <Text style={styles.valueText}>{item.Id}</Text>
+                        </View>
 
-                            <View style={styles.acoesContainer}>
-                                <TouchableOpacity style={styles.buttonEdit}>
-                                    <Text style={styles.textCategoria}>Editar</Text>
-                                </TouchableOpacity>
-                                <TouchableOpacity style={styles.buttonDelete}>
-                                    <Text style={styles.textCategoria}>Excluir</Text>
-                                </TouchableOpacity>
-                            </View>
+                        <View style={styles.acoesContainer}>
+                            <TouchableOpacity
+                                style={styles.buttonEdit}
+                                onPress={() => openEdit(item)}
+                            >
+                                <Text style={styles.buttonEditText}>Editar</Text>
+                            </TouchableOpacity>
+
+                            <TouchableOpacity
+                                style={styles.buttonDelete}
+                            >
+                                <Text style={styles.buttonDeleteText}>Excluir</Text>
+                            </TouchableOpacity>
                         </View>
                     </View>
                 )}
             />
 
             <Modal
-                animationType="slide"
-                transparent={true}
                 visible={modalVisible}
-                onRequestClose={() => setModalVisible(false)}
+                transparent
+                animationType="slide"
+                onRequestClose={() => closeModal()}
             >
                 <View style={styles.modalOverlay}>
-                    <View style={styles.modalContent}>
-                        <View style={styles.modalHeader}>
-                            <Text style={styles.modalTitle}>Nova Categoria</Text>
-                            <TouchableOpacity onPress={() => setModalVisible(false)}>
-                                <Text style={styles.closeButton}>✕</Text>
-                            </TouchableOpacity>
-                        </View>
+                    <View style={styles.modalContainer}>
+                        <Text style={styles.modalTitle}>
+                            {selectedCategoria ? 'Editar Categoria' : 'Nova Categoria'}
+                        </Text>
 
                         <TextInput
-                            style={styles.input}
-                            placeholder="Inserir Categoria"
+                            placeholder="Digite o nome da categoria"
                             placeholderTextColor="#6b7280"
-                            onChangeText={setNovaCategoria}
-                            value={novaCategoria}
+                            value={nomeCategoria}
+                            onChangeText={setNomeCategoria}
+                            style={styles.input}
                         />
 
-                        <View style={styles.buttonContainer}>
+                        <View style={styles.modalActions}>
                             <TouchableOpacity
-                                style={styles.buttonCancel}
-                                onPress={() => {
-                                    setNovaCategoria('');
-                                    setModalVisible(false);
-                                }}
+                                style={[styles.modalButton, styles.cancelButton]}
+                                onPress={() => closeModal()}
                             >
-                                <Text style={styles.textButtonCancel}>Cancelar</Text>
+                                <Text style={{ color: '#111827', fontWeight: '600' }}>Cancelar</Text>
                             </TouchableOpacity>
+
                             <TouchableOpacity
-                                style={styles.buttonSave}
-                                onPress={handleSalvarCategoria}
+                                style={[styles.modalButton, styles.saveButton]}
+                                onPress={salvar}
                             >
-                                <Text style={styles.textButtonSave}>Salvar</Text>
+                                <Text style={{ color: '#f9fafb', fontWeight: '600' }}>Salvar</Text>
                             </TouchableOpacity>
                         </View>
                     </View>
                 </View>
             </Modal>
-        </View>
+        </SafeAreaView>
     );
 }
+
 
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: '#f8fafc'
+        backgroundColor: '#f8fafc',
     },
-    headerAction: {
+    header: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
         paddingHorizontal: 16,
-        alignItems: 'flex-end',
-        marginTop: 10,
-        marginBottom: 10
+        paddingVertical: 16,
     },
-    listContent: {
-        paddingHorizontal: 16,
-        paddingBottom: 24
+    titleScreen: {
+        fontSize: 20,
+        fontWeight: '700',
+        color: '#111827',
     },
     button: {
         backgroundColor: '#111827',
@@ -127,132 +159,122 @@ const styles = StyleSheet.create({
         height: 40,
         borderRadius: 10,
         justifyContent: 'center',
-        paddingHorizontal: 14
+        paddingHorizontal: 14,
     },
     buttonText: {
         color: '#f9fafb',
         fontSize: 14,
         textAlign: 'center',
-        fontWeight: '600'
+        fontWeight: '600',
     },
-    imagem: {
-        width: 100,
-        height: 100,
-        marginBottom: 10,
-        resizeMode: 'contain'
+    listContent: {
+        paddingHorizontal: 16,
+        paddingBottom: 24,
     },
     card: {
         backgroundColor: '#fff',
         borderRadius: 12,
         padding: 16,
         marginBottom: 12,
-        justifyContent: 'center',
         borderWidth: 1,
-        borderColor: '#e5e7eb'
-    },
-    cardContent: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        justifyContent: 'space-between'
+        borderColor: '#e5e7eb',
     },
     nomeProduto: {
         fontSize: 17,
         fontWeight: '600',
-        flex: 1,
-        marginRight: 12,
-        color: '#111827'
+        marginBottom: 8,
+        color: '#111827',
+    },
+    infoContainer: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        marginBottom: 12,
+        gap: 6,
+    },
+    label: {
+        color: '#6b7280',
+        fontSize: 14,
+    },
+    valueText: {
+        color: '#111827',
+        fontSize: 14,
+        fontWeight: '500',
     },
     acoesContainer: {
         flexDirection: 'row',
         alignItems: 'center',
+        gap: 8,
         justifyContent: 'flex-end',
-        gap: 10
     },
     buttonEdit: {
-        backgroundColor: '#111827',
-        paddingHorizontal: 14,
+        backgroundColor: '#f3f4f6',
+        paddingHorizontal: 12,
         paddingVertical: 8,
         borderRadius: 8,
-        justifyContent: 'center',
-        alignItems: 'center'
+    },
+    buttonEditText: {
+        fontSize: 14,
+        fontWeight: '600',
+        color: '#111827',
     },
     buttonDelete: {
-        backgroundColor: '#ef4444',
-        paddingHorizontal: 14,
+        backgroundColor: '#f3f4f6',
+        paddingHorizontal: 12,
         paddingVertical: 8,
         borderRadius: 8,
-        justifyContent: 'center',
-        alignItems: 'center'
     },
-    textCategoria: {
-        color: '#fff',
-        fontWeight: '600'
+    buttonDeleteText: {
+        fontSize: 14,
+        fontWeight: '600',
+        color: '#111827',
     },
     modalOverlay: {
         flex: 1,
         backgroundColor: 'rgba(0, 0, 0, 0.5)',
-        justifyContent: 'flex-end'
+        justifyContent: 'flex-end',
     },
-    modalContent: {
+    modalContainer: {
         backgroundColor: '#f8fafc',
         borderTopLeftRadius: 20,
         borderTopRightRadius: 20,
         paddingHorizontal: 16,
         paddingVertical: 20,
-        minHeight: 280
-    },
-    modalHeader: {
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        marginBottom: 20
+        maxHeight: '80%',
     },
     modalTitle: {
         fontSize: 20,
         fontWeight: '700',
-        color: '#111827'
-    },
-    closeButton: {
-        fontSize: 24,
-        color: '#6b7280',
-        fontWeight: '600'
+        color: '#111827',
+        marginBottom: 20,
     },
     input: {
         height: 52,
+        width: '100%',
+        marginBottom: 12,
         borderWidth: 1,
         borderColor: '#d1d5db',
         borderRadius: 10,
         paddingHorizontal: 12,
         backgroundColor: '#ffffff',
-        marginBottom: 16,
-        color: '#111827'
+        color: '#111827',
     },
-    buttonContainer: {
+    modalActions: {
         flexDirection: 'row',
         gap: 12,
-        marginTop: 20
+        marginTop: 20,
     },
-    buttonCancel: {
+    modalButton: {
         flex: 1,
+        paddingVertical: 10,
+        borderRadius: 8,
+        alignItems: 'center',
+    },
+    cancelButton: {
+        backgroundColor: '#ffffff',
         borderWidth: 1,
         borderColor: '#d1d5db',
-        paddingVertical: 10,
-        borderRadius: 8,
-        alignItems: 'center'
     },
-    textButtonCancel: {
-        color: '#111827',
-        fontWeight: '600'
-    },
-    buttonSave: {
-        flex: 1,
+    saveButton: {
         backgroundColor: '#111827',
-        paddingVertical: 10,
-        borderRadius: 8,
-        alignItems: 'center'
     },
-    textButtonSave: {
-        color: '#f9fafb',
-        fontWeight: '600'
-    }
-})
+});

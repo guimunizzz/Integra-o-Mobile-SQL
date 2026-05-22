@@ -2,7 +2,7 @@ import { NavigationContainer } from "@react-navigation/native";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import Home from "./src/screens/home";
 import Produtos from "./src/screens/produtos";
-import Categorias from "./src/screens/categorias";
+import CategoriaScreen from "./src/screens/categorias";
 
 export type RootStackParamList = {
   Home: undefined,
@@ -28,7 +28,7 @@ export default function App() {
         />
         <Stack.Screen
           name='Categorias'
-          component={Categorias}
+          component={CategoriaScreen}
         />
       </Stack.Navigator>
     </NavigationContainer>
