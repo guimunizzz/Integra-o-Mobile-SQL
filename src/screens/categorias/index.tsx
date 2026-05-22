@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, FlatList, TouchableOpacity, StyleSheet, Modal, TextInput } from 'react-native';
+import { View, Text, FlatList, TouchableOpacity, StyleSheet, Modal, TextInput, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { initDB } from '../../database/database';
 import { CategoriaRepository } from '../../repositories/CategoriaRepository';
@@ -31,12 +31,30 @@ export default function CategoriaScreen() {
     async function salvar() {
         if (!nomeCategoria.trim()) return;
         if (selectedCategoria) {
-            categoriaRepo.update(new Categoria(nomeCategoria, selectedCategoria.Id));
+            await categoriaRepo.update(new Categoria(nomeCategoria, selectedCategoria.Id));
         } else {
-            categoriaRepo.create(new Categoria(nomeCategoria, 0));
+            await categoriaRepo.create(new Categoria(nomeCategoria, 0));
         }
         closeModal();
-        loadData();
+        await loadData();
+    }
+
+    function confirmarExclusao(item: Categoria): void {
+        Alert.alert(
+            'Excluir categoria',
+            `Deseja excluir a categoria "${item.Nome}"?`,
+            [
+                { text: 'Cancelar', style: 'cancel' },
+                {
+                    text: 'Excluir',
+                    style: 'destructive',
+                    onPress: async () => {
+                        await categoriaRepo.delete(item.Id);
+                        await loadData();
+                    },
+                },
+            ],
+        );
     }
 
     function openCreate(): void {
@@ -85,6 +103,7 @@ export default function CategoriaScreen() {
 
                             <TouchableOpacity
                                 style={styles.buttonDelete}
+                                onPress={() => confirmarExclusao(item)}
                             >
                                 <Text style={styles.buttonDeleteText}>Excluir</Text>
                             </TouchableOpacity>
